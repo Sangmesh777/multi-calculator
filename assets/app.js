@@ -3,6 +3,8 @@ const num = id => Number($(id).value) || 0;
 const inr = n => '\u20B9' + Math.round(n).toLocaleString('en-IN');
 const plain = n => (Math.abs(n) >= 1e15 || (n !== 0 && Math.abs(n) < 1e-9))
   ? n.toExponential(6) : (+n.toPrecision(12)).toLocaleString('en-IN', { maximumFractionDigits: 10 });
+// ungrouped, so a value can be pasted back into the expression box
+const raw = n => String(+Number(n).toPrecision(12));
 
 
 
@@ -56,6 +58,7 @@ function evaluate(src, deg) {
       i += word[0].length;
       if (name === 'pi') return Math.PI;
       if (name === 'e') return Math.E;
+      if (name === 'ans') return lastResult === null ? 0 : lastResult;
       const fn = FUNCS[name];
       if (!fn) fail('unknown ' + name);
       if (s[i] !== '(') fail('( expected after ' + name);
@@ -167,7 +170,29 @@ $('clearHist').onclick = () => {
   history = []; try { localStorage.removeItem('mc_hist'); } catch (e) {} renderHist();
 };
 
-// ---------- health: BMI + BMR + TDEE ----------
+// ---------- calculator memory (MC / MR / MS / M+ / M-) ----------
+let memory = 0;
+function memLabel() {
+  const t = $('memTag');
+  t.textContent = memory ? 'M = ' + plain(memory) : 'M empty';
+  t.classList.toggle('mut', !memory);
+}
+$('memRow').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const act = b.dataset.m, cur = lastResult === null ? 0 : lastResult;
+  if (act === 'MC') memory = 0;
+  else if (act === 'MS') memory = cur;
+  else if (act === 'M+') memory += cur;
+  else if (act === 'M-') memory -= cur;
+  else if (act === 'MR') {
+    if (!memory) return;
+    $('c_expr').value += raw(memory);
+    runCalc(false);
+  }
+  memLabel();
+});
+
+// ---------- health: BMI, BMR, TDEE, body fat, water ----------
 function health() {
   const imperial = $('h_unit').value === 'i';
   const kg = imperial ? num('h_w') * 0.45359237 : num('h_w');
@@ -177,11 +202,40 @@ function health() {
   if (!(kg > 0 && cm > 0)) { el.innerHTML = '<span class="err">Enter a weight and height above zero.</span>'; return; }
   const bmi = kg / (cm / 100) ** 2;
   const cat = bmi < 18.5 ? 'Underweight' : bmi < 25 ? 'Normal' : bmi < 30 ? 'Overweight' : 'Obese';
+  const m = cm / 100;
   let html = `<div class="big">${bmi.toFixed(1)} <span class="mut">BMI</span></div><div class="mut">${cat} (WHO)</div>`;
+  html += `<div class="mut" style="margin-top:4px">Healthy weight for this height: ${(18.5 * m * m).toFixed(1)}–${(24.9 * m * m).toFixed(1)} kg</div>`;
+
   if (age > 0) {
     const bmr = 10 * kg + 6.25 * cm - 5 * age + (sex === 'm' ? 5 : -161);
+    const tdee = bmr * act;
     html += `<div class="big" style="margin-top:10px">${Math.round(bmr)} <span class="mut">kcal/day BMR</span></div>`;
-    html += `<div class="big" style="margin-top:6px">${Math.round(bmr * act)} <span class="mut">kcal/day TDEE</span></div>`;
+    html += `<div class="big" style="margin-top:6px">${Math.round(tdee)} <span class="mut">kcal/day TDEE</span></div>`;
+    const goal = $('h_goal').value;
+    const target = tdee + (goal === 'lose' ? -500 : goal === 'gain' ? 500 : 0);
+    const gtxt = goal === 'lose' ? 'To lose about 0.5 kg a week'
+      : goal === 'gain' ? 'To gain about 0.5 kg a week' : 'To stay at this weight';
+    html += `<div class="mut" style="margin-top:4px">${gtxt}: <b>${Math.round(target)} kcal/day</b></div>`;
+  }
+
+  html += `<div class="mut" style="margin-top:8px">Water: about ${(kg * 0.035).toFixed(1)} L a day</div>`;
+
+  // Body fat, US Navy method. Waist, neck and hip in cm.
+  const neck = imperial ? num('h_neck') * 2.54 : num('h_neck');
+  const waist = imperial ? num('h_waist') * 2.54 : num('h_waist');
+  const hip = imperial ? num('h_hip') * 2.54 : num('h_hip');
+  let bf = NaN;
+  if (neck > 0 && waist > 0) {
+    if (sex === 'm' && waist > neck) {
+      bf = 495 / (1.0324 - 0.19077 * Math.log10(waist - neck) + 0.15456 * Math.log10(cm)) - 450;
+    } else if (sex === 'f' && hip > 0 && waist + hip > neck) {
+      bf = 495 / (1.29579 - 0.35004 * Math.log10(waist + hip - neck) + 0.22100 * Math.log10(cm)) - 450;
+    }
+  }
+  if (isFinite(bf) && bf > 0) {
+    html += `<div class="big" style="margin-top:8px">${bf.toFixed(1)}% <span class="mut">body fat (US Navy)</span></div>`;
+  } else if (neck > 0 || waist > 0) {
+    html += `<div class="mut" style="margin-top:8px">Body fat needs neck and waist${sex === 'f' ? ', and hip' : ''} — waist must be larger than neck.</div>`;
   }
   el.innerHTML = html;
 }
@@ -231,6 +285,11 @@ const UNITS = {
   Speed: { 'm/s': 1, 'km/h': 1 / 3.6, mph: 0.44704, knot: 0.514444444444, 'ft/s': 0.3048 },
   Time: { ms: 0.001, s: 1, min: 60, hour: 3600, day: 86400, week: 604800 },
   Data: { byte: 1, bit: 0.125, KB: 1024, MB: 1048576, GB: 1073741824, TB: 1099511627776 },
+  Pressure: { Pa: 1, kPa: 1000, bar: 100000, atm: 101325, psi: 6894.757293168, mmHg: 133.322387415, torr: 133.322368421 },
+  Energy: { J: 1, kJ: 1000, cal: 4.184, kcal: 4184, Wh: 3600, kWh: 3600000, BTU: 1055.05585262 },
+  Power: { W: 1, kW: 1000, MW: 1000000, hp: 745.6998715823 },
+  Angle: { deg: 1, rad: 57.29577951308232, grad: 0.9, turn: 360 },
+  Frequency: { Hz: 1, kHz: 1000, MHz: 1000000, GHz: 1000000000, rpm: 1 / 60 },
   Temperature: null
 };
 function fillUnits() {
@@ -353,14 +412,131 @@ function addDays() {
   if (!a) { el.textContent = 'Pick a start date.'; return; }
   el.innerHTML = `<div class="big">${iso(dayms(a) + n * 864e5)}</div>`;
 }
+// Whole years/months/days between two day numbers.
+// Anchors on the birth date shifted forward by the whole years and months, clamped
+// to the month's length, so a 31st never produces a negative day count.
+function ageParts(b, r) {
+  const bd = new Date(b), rd = new Date(r);
+  let y = rd.getUTCFullYear() - bd.getUTCFullYear();
+  let mo = rd.getUTCMonth() - bd.getUTCMonth();
+  if (mo < 0) { y--; mo += 12; }
+
+  const anchor = (yy, mm) => {
+    const lastDay = new Date(Date.UTC(yy, mm + 1, 0)).getUTCDate();
+    return Date.UTC(yy, mm, Math.min(bd.getUTCDate(), lastDay));
+  };
+  let a = anchor(bd.getUTCFullYear() + y, bd.getUTCMonth() + mo);
+  let d = Math.round((r - a) / 864e5);
+  if (d < 0) {                       // anchor overshot, step back one month
+    mo--;
+    if (mo < 0) { y--; mo += 12; }
+    a = anchor(bd.getUTCFullYear() + y, bd.getUTCMonth() + mo);
+    d = Math.round((r - a) / 864e5);
+  }
+  return { y, mo, d };
+}
+function exactAge() {
+  const dob = $('a_dob').value, ref = $('a_ref').value, el = $('a_out');
+  if (!dob || !ref) { el.textContent = 'Pick a birth date and a date to compare.'; return; }
+  const b = dayms(dob), r = dayms(ref);
+  if (r < b) { el.textContent = 'The second date is before the birth date.'; return; }
+  const { y, mo, d } = ageParts(b, r);
+  el.innerHTML = `<div class="big">${y} <span class="mut">years</span></div>`
+    + `<div class="mut">${mo} months, ${d} days &middot; ${Math.round((r - b) / 864e5).toLocaleString('en-IN')} days in total</div>`;
+}
+// Weekdays in [start, end). Saturdays and Sundays are skipped.
+function countWeekdays(s, e) {
+  const days = Math.round((e - s) / 864e5);
+  let count = 0;
+  for (let k = 0; k < days; k++) {
+    const dow = new Date(s + k * 864e5).getUTCDay();
+    if (dow !== 0 && dow !== 6) count++;
+  }
+  return count;
+}
+function bizDays() {
+  const a = $('d_a').value, b = $('d_b').value, el = $('d_out3');
+  if (!a || !b) { el.textContent = 'Pick both dates above.'; return; }
+  const s = dayms(a), e = dayms(b);
+  if (e < s) { el.textContent = 'Date B is before Date A.'; return; }
+  const days = Math.round((e - s) / 864e5);
+  if (days > 20000) { el.textContent = 'Range too long — over 50 years.'; return; }
+  el.innerHTML = `<div class="big">${countWeekdays(s, e)} <span class="mut">weekdays</span></div>`
+    + `<div class="mut">Monday to Friday across ${days} days. Public holidays are not counted.</div>`;
+}
+function dayOfWeek() {
+  const v = $('w_date').value, el = $('w_out');
+  if (!v) { el.textContent = 'Pick a date.'; return; }
+  const d = new Date(dayms(v));
+  el.innerHTML = `<div class="big">${d.toLocaleDateString('en-IN', { weekday: 'long', timeZone: 'UTC' })}</div>`
+    + `<div class="mut">${d.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })}</div>`;
+}
+
+// ---------- finance: compound and simple interest ----------
+function compound() {
+  const P = num('ci_p'), rate = num('ci_r'), yrs = num('ci_y'), per = Number($('ci_n').value) || 1;
+  const el = $('ci_out');
+  if (!(P > 0 && yrs > 0)) { el.innerHTML = '<span class="err">Enter a principal and a duration above zero.</span>'; return; }
+  const A = P * (1 + rate / 100 / per) ** (per * yrs);
+  el.innerHTML = `<div class="big">${inr(A)} <span class="mut">maturity</span></div>`
+    + `<div class="mut" style="margin-top:6px">Principal ${inr(P)} &middot; Interest ${inr(A - P)}</div>`;
+}
+function simple() {
+  const P = num('si_p'), rate = num('si_r'), yrs = num('si_y');
+  const el = $('si_out');
+  if (!(P > 0 && yrs > 0)) { el.innerHTML = '<span class="err">Enter a principal and a duration above zero.</span>'; return; }
+  const si = P * rate / 100 * yrs;
+  el.innerHTML = `<div class="big">${inr(P + si)} <span class="mut">total</span></div>`
+    + `<div class="mut" style="margin-top:6px">Principal ${inr(P)} &middot; Interest ${inr(si)}</div>`;
+}
+
+// ---------- everyday: percentage, bill split, number bases ----------
+function pct() {
+  const a = num('p_a'), b = num('p_b'), mode = $('p_mode').value, el = $('p_out');
+  let out, label, suffix = '';
+  if (mode === 'of') { out = a / 100 * b; label = `${a}% of ${b}`; }
+  else if (mode === 'is') {
+    if (!b) { el.innerHTML = '<span class="err">The second value cannot be zero.</span>'; return; }
+    out = a / b * 100; label = `${a} is what percent of ${b}`; suffix = '%';
+  } else {
+    if (!a) { el.innerHTML = '<span class="err">The starting value cannot be zero.</span>'; return; }
+    out = (b - a) / a * 100; label = `change from ${a} to ${b}`; suffix = '%';
+  }
+  el.innerHTML = `<div class="big">${+out.toPrecision(10)}${suffix}</div><div class="mut">${label}</div>`;
+}
+function tip() {
+  const bill = num('t_bill'), p = num('t_pct');
+  const people = Math.max(1, Math.round(num('t_ppl')) || 1);
+  const el = $('t_out');
+  if (!(bill > 0)) { el.innerHTML = '<span class="err">Enter a bill amount above zero.</span>'; return; }
+  const tipAmt = bill * p / 100, total = bill + tipAmt;
+  el.innerHTML = `<div class="big">${inr(total / people)} <span class="mut">per person</span></div>`
+    + `<div class="mut" style="margin-top:6px">Tip ${inr(tipAmt)} &middot; Total ${inr(total)} &middot; ${people} ${people === 1 ? 'person' : 'people'}</div>`;
+}
+function baseconv() {
+  const v = $('bc_v').value.trim(), base = Number($('bc_base').value), el = $('bc_out');
+  if (!v) { el.innerHTML = '<span class="err">Enter a number.</span>'; return; }
+  const valid = /^[0-9a-f]+$/i.test(v) && [...v].every(ch => parseInt(ch, 36) < base);
+  const n = Number.parseInt(v, base);
+  if (!valid || !isFinite(n)) { el.innerHTML = `<span class="err">Not a valid base-${base} number.</span>`; return; }
+  el.innerHTML = `<div class="big">${n.toLocaleString('en-IN')} <span class="mut">decimal</span></div>`
+    + `<div class="mut" style="margin-top:6px">bin ${n.toString(2)} &middot; oct ${n.toString(8)} &middot; hex ${n.toString(16).toUpperCase()}</div>`;
+}
 
 // ---------- wiring ----------
-function recalc() { health(); emi(); gst(); sip(); convert(); convertCur(); countNotes(); daysBetween(); addDays(); }
+function recalc() {
+  health(); emi(); gst(); sip(); compound(); simple();
+  pct(); tip(); baseconv();
+  convert(); convertCur(); countNotes();
+  daysBetween(); addDays(); bizDays(); exactAge(); dayOfWeek();
+}
 document.addEventListener('input', recalc);
 $('u_cat').addEventListener('change', () => { fillUnits(); convert(); });
+$('p_mode').addEventListener('change', pct);
 (function init() {
   const today = iso(Date.now());
   $('d_a').value = today; $('d_b').value = today; $('d_a2').value = today;
+  $('a_ref').value = today; $('w_date').value = today; $('a_dob').value = '2000-01-01';
   for (const c of Object.keys(UNITS)) $('u_cat').add(new Option(c, c));
   $('u_cat').value = 'Length';
   try { history = JSON.parse(localStorage.getItem('mc_hist') || '[]') || []; } catch (e) { history = []; }
@@ -406,4 +582,47 @@ if (location.hash === '#test') (function selfTest() {
   t('100C to F', 100 * 9 / 5 + 32, 212);
   t('100 USD to INR', convertAmount(100, 'USD', 'INR'), 9481.64);
   t('100 INR to USD', +convertAmount(100, 'INR', 'USD').toFixed(4), 1.0547);
+
+  // tolerance-based, for values that are not exact decimals
+  const tn = (name, got, want, tol = 1e-6) => console.log((Math.abs(got - want) < tol ? 'ok   ' : 'FAIL ') + name + '  got ' + got + ' want ' + want);
+
+  // health additions
+  tn('healthy weight min 175cm', 18.5 * 1.75 ** 2, 56.65625);
+  tn('healthy weight max 175cm', 24.9 * 1.75 ** 2, 76.25625);
+  tn('water 70kg', 70 * 0.035, 2.45);
+  // US Navy worked example: male, 175cm, neck 37, waist 85 -> about 17.7%
+  tn('body fat male 175/37/85',
+     495 / (1.0324 - 0.19077 * Math.log10(85 - 37) + 0.15456 * Math.log10(175)) - 450, 17.71, 0.05);
+
+  // finance additions
+  tn('compound 1L 10% 2y annual', 100000 * (1 + 0.10 / 1) ** 2, 121000);
+  tn('compound 1L 10% 2y quarterly', 100000 * (1 + 0.10 / 4) ** 8, 121840.29, 0.01);
+  tn('simple 1L 10% 2y', 100000 * 0.10 * 2, 20000);
+
+  // everyday
+  tn('15% of 200', 15 / 100 * 200, 30);
+  tn('30 is what % of 200', 30 / 200 * 100, 15);
+  tn('change 200->250', (250 - 200) / 200 * 100, 25);
+  tn('tip 1000 10% 4 people', (1000 + 1000 * 0.10) / 4, 275);
+  tn('hex ff to decimal', Number.parseInt('ff', 16), 255);
+  tn('binary 1011 to decimal', Number.parseInt('1011', 2), 11);
+
+  // dates
+  const a1 = ageParts(Date.UTC(2000, 0, 1), Date.UTC(2025, 0, 1));
+  t('age 2000-01-01 to 2025-01-01 y', a1.y, 25);
+  t('age 2000-01-01 to 2025-01-01 m', a1.mo, 0);
+  t('age 2000-01-01 to 2025-01-01 d', a1.d, 0);
+  const a2 = ageParts(Date.UTC(2000, 0, 31), Date.UTC(2000, 2, 1));
+  t('age Jan31 to Mar1 = 1m1d months', a2.mo, 1);
+  t('age Jan31 to Mar1 = 1m1d days', a2.d, 1);
+  t('weekdays 2024-01-01..01-08', countWeekdays(Date.UTC(2024, 0, 1), Date.UTC(2024, 0, 8)), 5);
+  t('weekdays full week = 5', countWeekdays(Date.UTC(2024, 0, 1), Date.UTC(2024, 0, 7)), 5);
+  t('2026-10-26 is Monday', new Date(Date.UTC(2026, 9, 26)).getUTCDay(), 1);
+
+  // new unit categories
+  tn('1 kcal in J', UNITS.Energy.kcal, 4184);
+  tn('1 atm in psi', UNITS.Pressure.atm / UNITS.Pressure.psi, 14.6959, 1e-4);
+  tn('1 rad in deg', UNITS.Angle.rad, 180 / Math.PI, 1e-9);
+  tn('1 hp in W', UNITS.Power.hp, 745.6999, 1e-4);
+  tn('60 rpm in Hz', 60 * UNITS.Frequency.rpm, 1);
 })();

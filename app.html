@@ -40,6 +40,7 @@
 
     <nav id="tabs" class="tabs" aria-label="Calculators">
     <button data-t="calc" class="on">Calculator</button>
+    <button data-t="everyday">Everyday</button>
     <button data-t="health">Health</button>
     <button data-t="finance">Finance</button>
     <button data-t="units">Units</button>
@@ -56,6 +57,14 @@
       <button type="button" id="degBtn">Degrees</button>
       <button type="button" id="copyBtn">Copy result</button>
       <button type="button" id="clearHist">Clear history</button>
+    </div>
+    <div class="mini" id="memRow">
+      <button type="button" data-m="MC">MC</button>
+      <button type="button" data-m="MR">MR</button>
+      <button type="button" data-m="MS">MS</button>
+      <button type="button" data-m="M+">M+</button>
+      <button type="button" data-m="M-">M&minus;</button>
+      <span class="mut small" id="memTag">M empty</span>
     </div>
     <div class="keys" id="keys">
       <button type="button" data-k="C" class="fn">C</button>
@@ -92,9 +101,44 @@
     </div>
     <h2>History</h2>
     <ul id="hist"></ul>
-  </section>
+  </section>    <section id="everyday" class="panel">
+      <h2>Percentage</h2>
+      <label for="p_mode">What do you want to work out?</label>
+      <select id="p_mode">
+        <option value="of" selected>What is X% of Y?</option>
+        <option value="is">X is what percent of Y?</option>
+        <option value="chg">Percent change from X to Y</option>
+      </select>
+      <div class="row">
+        <div><label for="p_a">X</label><input id="p_a" type="number" inputmode="decimal" value="15"></div>
+        <div><label for="p_b">Y</label><input id="p_b" type="number" inputmode="decimal" value="200"></div>
+      </div>
+      <div class="out" id="p_out"></div>
 
-  <section id="health" class="panel">
+      <h2>Bill split and tip</h2>
+      <div class="row">
+        <div><label for="t_bill">Bill (₹)</label><input id="t_bill" type="number" inputmode="decimal" value="1200" min="0"></div>
+        <div><label for="t_pct">Tip (%)</label><input id="t_pct" type="number" inputmode="decimal" value="10" min="0"></div>
+        <div><label for="t_ppl">People</label><input id="t_ppl" type="number" inputmode="numeric" value="4" min="1"></div>
+      </div>
+      <div class="out" id="t_out"></div>
+
+      <h2>Number base</h2>
+      <div class="row">
+        <div><label for="bc_v">Value</label><input id="bc_v" type="text" autocomplete="off" spellcheck="false" value="255"></div>
+        <div><label for="bc_base">Base of that value</label>
+          <select id="bc_base">
+            <option value="2">2 — binary</option>
+            <option value="8">8 — octal</option>
+            <option value="10" selected>10 — decimal</option>
+            <option value="16">16 — hex</option>
+          </select>
+        </div>
+      </div>
+      <div class="out" id="bc_out"></div>
+    </section>
+
+    <section id="health" class="panel">
     <label for="h_unit">Units</label>
     <select id="h_unit"><option value="m">Metric (kg / cm)</option><option value="i">Imperial (lb / in)</option></select>
     <div class="row">
@@ -113,6 +157,18 @@
       <option value="1.725">Active — 6–7 days/week</option>
       <option value="1.9">Very active — physical job or 2× training</option>
     </select>
+    <label for="h_goal">Goal</label>
+    <select id="h_goal">
+      <option value="maintain" selected>Stay at this weight</option>
+      <option value="lose">Lose about 0.5 kg a week</option>
+      <option value="gain">Gain about 0.5 kg a week</option>
+    </select>
+    <h2>Body fat (optional)</h2>
+    <div class="row">
+      <div><label for="h_neck">Neck (cm)</label><input id="h_neck" type="number" inputmode="decimal" min="0" placeholder="e.g. 37"></div>
+      <div><label for="h_waist">Waist (cm)</label><input id="h_waist" type="number" inputmode="decimal" min="0" placeholder="e.g. 85"></div>
+      <div><label for="h_hip">Hip (cm, women)</label><input id="h_hip" type="number" inputmode="decimal" min="0" placeholder="e.g. 95"></div>
+    </div>
     <div class="out" id="h_out"></div>
   </section>
 
@@ -144,6 +200,33 @@
     </div>
     <label for="s_y">Years</label><input id="s_y" type="number" inputmode="numeric" value="10" min="0">
     <div class="out" id="s_out"></div>
+
+    <h2>Compound interest</h2>
+    <div class="row">
+      <div><label for="ci_p">Principal (₹)</label><input id="ci_p" type="number" inputmode="decimal" value="100000" min="0"></div>
+      <div><label for="ci_r">Rate (% per year)</label><input id="ci_r" type="number" inputmode="decimal" value="10" min="0"></div>
+    </div>
+    <div class="row">
+      <div><label for="ci_y">Years</label><input id="ci_y" type="number" inputmode="decimal" value="5" min="0"></div>
+      <div><label for="ci_n">Compounded</label>
+        <select id="ci_n">
+          <option value="1" selected>Yearly</option>
+          <option value="2">Half-yearly</option>
+          <option value="4">Quarterly</option>
+          <option value="12">Monthly</option>
+          <option value="365">Daily</option>
+        </select>
+      </div>
+    </div>
+    <div class="out" id="ci_out"></div>
+
+    <h2>Simple interest</h2>
+    <div class="row">
+      <div><label for="si_p">Principal (₹)</label><input id="si_p" type="number" inputmode="decimal" value="100000" min="0"></div>
+      <div><label for="si_r">Rate (% per year)</label><input id="si_r" type="number" inputmode="decimal" value="8" min="0"></div>
+      <div><label for="si_y">Years</label><input id="si_y" type="number" inputmode="decimal" value="3" min="0"></div>
+    </div>
+    <div class="out" id="si_out"></div>
   </section>
 
   <section id="units" class="panel">
@@ -180,6 +263,18 @@
       <div><label for="d_n">Add / subtract days</label><input id="d_n" type="number" inputmode="numeric" value="30"></div>
     </div>
     <div class="out" id="d_out2"></div>
+    <div class="out" id="d_out3"></div>
+
+    <h2>Exact age</h2>
+    <div class="row">
+      <div><label for="a_dob">Date of birth</label><input id="a_dob" type="date"></div>
+      <div><label for="a_ref">Age on</label><input id="a_ref" type="date"></div>
+    </div>
+    <div class="out" id="a_out"></div>
+
+    <h2>Day of the week</h2>
+    <label for="w_date">Date</label><input id="w_date" type="date">
+    <div class="out" id="w_out"></div>
   </section>
     </div>
   </div>

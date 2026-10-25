@@ -48,16 +48,17 @@ site/
 for each of the six tools, and three notes on how it's built. Every call to
 action goes to `app.html`.
 
-**app.html** — the calculator itself, in six tabs:
+**app.html** — the calculator itself, in seven tabs:
 
 | Tab | What it does |
 |---|---|
-| Calculator | Scientific expressions — powers, roots, trig, factorials, percentages, history |
-| Health | BMI (WHO bands), BMR, TDEE; metric or imperial |
-| Finance | Loan EMI, GST in either direction, SIP maturity |
-| Units | 8 categories — length, mass, area, volume, speed, time, data, temperature |
+| Calculator | Scientific expressions — powers, roots, trig, factorials, percentages, memory keys, `ans`, history |
+| Everyday | Percentages three ways, bill split with tip, number bases (binary/octal/hex) |
+| Health | BMI, BMR, TDEE, body fat (US Navy), healthy weight range, water intake, calorie target; metric or imperial |
+| Finance | Loan EMI, GST either direction, SIP, compound interest, simple interest |
+| Units | 13 categories — length, mass, area, volume, speed, time, data, pressure, energy, power, angle, frequency, temperature |
 | Currency | 42 currencies with live rates, offline fallback, ₹ cash counter |
-| Dates | Days between dates, add/subtract days |
+| Dates | Days and weekdays between dates, add/subtract days, exact age, day of the week |
 
 ## Themes
 
@@ -73,10 +74,12 @@ top, because blur isn't expressible as a variable.
 ## Testing
 
 The calculator carries its own tests. Open `app.html#test` and read the browser
-console — 26 checks, each `ok` or `FAIL` with the produced and expected value.
+console — 52 checks, each `ok` or `FAIL` with the produced and expected value.
 They cover the expression parser (precedence, right-associative `^`, unary
-minus, factorial, percent, degrees vs radians), BMI/BMR/TDEE, EMI, GST both
-ways, SIP, unit conversions and currency conversion.
+minus, factorial, percent, degrees vs radians), BMI/BMR/TDEE, body fat, healthy
+weight range, water intake, EMI, GST both ways, SIP, compound and simple
+interest, the three percentage modes, bill split, number bases, exact age,
+weekday counting, all 13 unit categories and currency conversion.
 
 There is no test runner: the app has no tooling, and the tests travel with it.
 
@@ -87,6 +90,8 @@ There is no test runner: the app has no tooling, and the tests travel with it.
 | Colours, spacing, layout | `assets/site.css` — variables at the top |
 | Any calculation | `assets/app.js` — one function per tool |
 | Add a unit | `UNITS` in `app.js` — one line per unit, the dropdown updates itself |
+| Add a unit category | a new key in `UNITS`; the category list is built from it |
+| Add a whole calculator | a new `<section class="panel">`, a tab button, one function, and one call in `recalc()` |
 | Add a currency | `CURR` in `app.js`, plus a rate in `SNAPSHOT` for offline |
 | Add a theme | `body.<name>` variables in `site.css`, plus the name in `THEMES` in `site.js` and an `<option>` in each page's header |
 | Landing copy | `index.html` |

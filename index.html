@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Multi-Calculator — six everyday calculators in one page</title>
-<meta name="description" content="BMI, BMR and TDEE, loan EMI, GST and SIP, unit conversion, live currency rates and date maths. Six everyday calculators in one page. No account, no install, runs in your browser.">
+<title>Multi-Calculator — seven everyday calculators in one page</title>
+<meta name="description" content="Scientific calculator with memory, percentages, bill split, BMI and body fat, EMI, GST, SIP, compound interest, unit conversion, live currency rates and date maths. Seven everyday calculators in one page. No account, no install.">
 <meta name="theme-color" content="#0f1115">
-<meta property="og:title" content="Multi-Calculator — six everyday calculators in one page">
-<meta property="og:description" content="Health, loans, GST, units, currency and dates. No account, no install, works in your browser.">
+<meta property="og:title" content="Multi-Calculator — seven everyday calculators in one page">
+<meta property="og:description" content="Scientific calculator, percentages, health, loans, GST, compound interest, units, currency and dates. No account, no install, works in your browser.">
 <meta property="og:type" content="website">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="assets/site.css">
@@ -39,11 +39,11 @@
   <div class="wrap">
     <section class="hero">
       <div>
-        <span class="eyebrow">Six tools, one page</span>
+        <span class="eyebrow">Seven tools, one page</span>
         <h1>Every calculator you actually use, in one place.</h1>
         <p class="lede">
-          Health, loans, tax, units, currency and dates. No account, nothing to install,
-          and the maths never leaves your browser.
+          Scientific, percentages, health, loans, tax, units, currency and dates.
+          No account, nothing to install, and the maths never leaves your browser.
         </p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="app.html">Open the calculator</a>
@@ -81,7 +81,7 @@
     <section class="section" id="tools">
       <div class="section-head">
         <h2>What's inside</h2>
-        <p>Six focused tools rather than one crowded screen. Each one opens on its own tab.</p>
+        <p>Seven focused tools rather than one crowded screen. Each one opens on its own tab.</p>
       </div>
 
       <div class="grid-3">
@@ -92,45 +92,59 @@
           <ul>
             <li>Powers, roots, factorials, percentages</li>
             <li>Trig in degrees or radians</li>
+            <li>Memory keys and an <code>ans</code> value</li>
             <li>History you can click back into</li>
           </ul>
         </article>
 
         <article class="card">
           <span class="num">02</span>
-          <h3>Health</h3>
-          <p>Body metrics from the standard published formulas.</p>
+          <h3>Everyday</h3>
+          <p>The small sums that come up all the time.</p>
           <ul>
-            <li>BMI with WHO categories</li>
-            <li>BMR and daily energy needs</li>
-            <li>Metric or imperial input</li>
+            <li>Percentages, three ways</li>
+            <li>Bill split with tip</li>
+            <li>Number bases — binary, octal, hex</li>
           </ul>
         </article>
 
         <article class="card">
           <span class="num">03</span>
-          <h3>Finance</h3>
-          <p>The three calculations people actually reach for.</p>
+          <h3>Health</h3>
+          <p>Body metrics from the standard published formulas.</p>
           <ul>
-            <li>Loan EMI with the interest breakdown</li>
-            <li>GST added or removed</li>
-            <li>SIP maturity and gain</li>
+            <li>BMI, BMR, daily energy needs</li>
+            <li>Body fat by the US Navy method</li>
+            <li>Healthy weight range and water intake</li>
+            <li>Calorie target for losing or gaining</li>
           </ul>
         </article>
 
         <article class="card">
           <span class="num">04</span>
-          <h3>Units</h3>
-          <p>Eight categories, including the awkward ones.</p>
+          <h3>Finance</h3>
+          <p>Loans, tax and savings in one place.</p>
           <ul>
-            <li>Acres, hectares, square feet</li>
-            <li>US vs UK gallons, cups, tbsp, tsp</li>
-            <li>Bytes through terabytes, knots, stone</li>
+            <li>Loan EMI with the interest breakdown</li>
+            <li>GST added or removed</li>
+            <li>SIP maturity and gain</li>
+            <li>Compound and simple interest</li>
           </ul>
         </article>
 
         <article class="card">
           <span class="num">05</span>
+          <h3>Units</h3>
+          <p>Thirteen categories, including the awkward ones.</p>
+          <ul>
+            <li>Acres, hectares, US vs UK gallons</li>
+            <li>Pressure, energy, power, angle</li>
+            <li>Bytes through terabytes, knots, stone</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <span class="num">06</span>
           <h3>Currency</h3>
           <p>Live rates, with a fallback so it never breaks.</p>
           <ul>
@@ -141,13 +155,13 @@
         </article>
 
         <article class="card">
-          <span class="num">06</span>
+          <span class="num">07</span>
           <h3>Dates</h3>
           <p>Date maths that doesn't drift with time zones.</p>
           <ul>
-            <li>Days between two dates</li>
+            <li>Days and weekdays between two dates</li>
             <li>Add or subtract days</li>
-            <li>No daylight-saving surprises</li>
+            <li>Exact age, and the weekday for any date</li>
           </ul>
         </article>
       </div>
@@ -180,12 +194,11 @@
 <footer class="site-footer">
   <div class="wrap">
     <div>
-      <div class="brand" style="font-size:.95rem">Multi-Calculator</div>
-      <p class="fine">
-        Health figures are population estimates, not medical advice. SIP projections assume a
-        constant return. Currency rates come from a public source and fall back to a dated
-        snapshot when offline.
-      </p>
+      <div class="brand" style="font-size:.95rem">Multi-Calculator</div>        <p class="fine">
+          Health figures are population estimates, not medical advice. SIP and compound-interest
+          projections assume a constant return. Currency rates come from a public source and fall
+          back to a dated snapshot when offline.
+        </p>
     </div>
     <nav aria-label="Footer">
       <a href="app.html">Calculator</a>
